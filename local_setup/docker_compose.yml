@@ -1,0 +1,37 @@
+services:
+  user_authenticator:
+    build:
+      context: ../.
+      dockerfile: Dockerfile
+    hostname: user_authenticator
+    container_name: user_authenticator
+    networks:
+      - bithash
+    volumes:
+      - ../.:/user_authenticator
+    environment:
+      - MODE=server
+      - REDIS_HOST=""
+      - REDIS_PORT=""
+      - REDIS_USERNAME=""
+      - REDIS_PASSWORD=""
+      - MYSQL_CONNECTION_STRING=""
+      - SMTP_USER_NAME=""
+      - SMTP_PASSWORD=""
+    env_file:
+      - ".env"
+    tty: true
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://user_authenticator:8000/healthz"]
+      interval: 30s  # How often to run the check
+      retries: 3      # Number of retries before marking the container as unhealthy
+      start_period: 10s  # Grace period for containers to initialize
+      timeout: 3s     # How long to wait for the health check to complete
+
+
+networks:
+  bithash:
+    external:
+      name: bithash
