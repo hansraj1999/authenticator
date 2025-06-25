@@ -7,7 +7,10 @@ from repository.schemas import (
     LoginRequest,
     LoginResponse,
     LogoutResponse,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
 )
+from repository.password import Password
 import logging
 from repository.signup import SignUP
 import traceback
@@ -58,7 +61,9 @@ async def verify_otp(request: VerifyOTPRequest):
     try:
         logger.info(request)
         otp = OTP()
-        resposne = await otp.verify_otp(request.otp, request.user_id)
+        resposne = await otp.verify_otp(
+            request.otp, request.user_id, request.service_name
+        )
         resposne = {
             "id": str(resposne.id),
             "name": resposne.name,
@@ -127,6 +132,32 @@ async def logout(authorization: str = Header(...)):
         logger.exception(str(e))
         raise HTTPException(status_code=400, detail={"message": str(e), "details": []})
     return LogoutResponse(message="Successfully logged out")
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse)
+async def reset_password(request: ResetPasswordRequest):
+    # logic to verify token, reset password
+    try:
+        await Password(
+            request.email, request.service_name
+        ).start_reset_password_process(request.new_password)
+        return {
+            "message": "Password successfully updated kindly check your email for further instructions."
+        }
+
+    except ValidationError as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "message": "Validation Error",
+                "details": e.errors(include_url=False, include_input=False),
+            },
+        )
+    except Exception as e:
+        traceback.print_exc()
+        logger.exception(str(e))
+        raise HTTPException(status_code=400, detail={"message": str(e), "details": []})
 
 
 # @router.get("/session/{token}", response_model=LoginResponse)

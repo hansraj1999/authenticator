@@ -51,20 +51,62 @@ class User:
             return users
 
     @staticmethod
-    async def get_user_by_id(user_id: str):
+    async def get_user_by_id(user_id: str, service_name: str = "shorturl"):
         async for session in db_manager.get_session():
-            user = await session.get(User, user_id)
+            result = await session.execute(
+                select(UserModel).where(
+                    UserModel.id == user_id, UserModel.service_name == service_name
+                )
+            )
+            user = result.scalar_one_or_none()
             return user
-
         return None
 
     @staticmethod
-    async def get_user_by_email(email: str):
+    async def get_user_by_email(email: str, service_name: str = "shorturl"):
         async for session in db_manager.get_session():
             result = await session.execute(
-                select(UserModel).where(UserModel.email == email)
+                select(UserModel).where(
+                    UserModel.email == email, UserModel.service_name == service_name
+                )
             )
             user = result.scalar_one_or_none()
             return user
 
         return None
+
+    @staticmethod
+    async def update_password(
+        user_id: str, password_hash: str, otp: str, service_name: str = "shorturl"
+    ):
+        async for session in db_manager.get_session():
+            query = text(
+                "UPDATE users SET password_hash = :password_hash, updated_at = NOW(), last_generated_otp = :otp, last_generated_otp_sent_at = NOW(), is_email_verified = False WHERE id = :user_id and service_name = :service_name"
+            )
+            result = await session.execute(
+                query,
+                {
+                    "password_hash": password_hash,
+                    "user_id": user_id,
+                    "otp": otp,
+                    "service_name": service_name,
+                },
+            )
+            await session.commit()
+            return result
+
+    @staticmethod
+    async def update_is_email_verified(user_id: str, service_name: str = "shorturl"):
+        async for session in db_manager.get_session():
+            query = text(
+                "UPDATE users SET  updated_at = NOW(), is_email_verified = True WHERE id = :user_id and service_name = :service_name"
+            )
+            result = await session.execute(
+                query,
+                {
+                    "user_id": user_id,
+                    "service_name": service_name,
+                },
+            )
+            await session.commit()
+            return result

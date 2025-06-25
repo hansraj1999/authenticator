@@ -33,6 +33,7 @@ class SignUPResponse(BaseModel):
 class VerifyOTPRequest(BaseModel):
     user_id: str
     otp: str
+    service_name: Optional[str] = "shorturl"
 
     @field_validator("otp")
     def otp_must_be_at_least_4_chars(cls, v):
@@ -149,4 +150,14 @@ class LoginResponse(BaseModel):
 
 
 class LogoutResponse(BaseModel):
+    message: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr  # reset token or OTP
+    new_password: str
+    service_name: Optional[str] = "shorturl"
+
+
+class ResetPasswordResponse(BaseModel):
     message: str
