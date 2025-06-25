@@ -146,3 +146,7 @@ class LoginResponse(BaseModel):
     token: str
     message: str = "User logged in successfully"
     expires_at: Optional[datetime] = None
+
+
+class LogoutResponse(BaseModel):
+    message: str

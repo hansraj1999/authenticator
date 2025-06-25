@@ -6,6 +6,7 @@ from repository.schemas import (
     VerifyOTPPResponse,
     LoginRequest,
     LoginResponse,
+    LogoutResponse,
 )
 import logging
 from repository.signup import SignUP
@@ -14,6 +15,8 @@ from pydantic import ValidationError
 from repository.otp import OTP
 from repository.login import Login
 from repository.session import Session
+from fastapi import Header
+from repository.logout import Logout
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"], prefix="/auth/v1")
@@ -109,6 +112,21 @@ async def login(request: LoginRequest):
         traceback.print_exc()
         logger.exception(str(e))
         raise HTTPException(status_code=400, detail={"message": str(e), "details": []})
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(authorization: str = Header(...)):
+    try:
+        # decode token, mark as inactive in DB
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Missing Authorization header")
+        logger.info(authorization)
+        await Logout(authorization).start_logout_process()
+    except Exception as e:
+        traceback.print_exc()
+        logger.exception(str(e))
+        raise HTTPException(status_code=400, detail={"message": str(e), "details": []})
+    return LogoutResponse(message="Successfully logged out")
 
 
 # @router.get("/session/{token}", response_model=LoginResponse)

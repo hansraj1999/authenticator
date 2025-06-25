@@ -37,6 +37,16 @@ class Session:
         return None
 
     @staticmethod
+    async def invalidate_session(session_id: str):
+        async for session in db_manager.get_session():
+            query = text(
+                "UPDATE sessions SET is_active = False WHERE session_id = :session_id"
+            )
+            result = await session.execute(query, {"session_id": session_id})
+            await session.commit()  # make sure to commit
+            return result
+
+    @staticmethod
     def check_if_session_is_expired(expires_at: datetime):
         if expires_at is None:
             return False
